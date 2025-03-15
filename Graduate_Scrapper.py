@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
-# import pandas as pd
+import pandas as pd
 
 # Dictionary of job categories and their respective URLs
 job_categories = {
@@ -10,8 +10,8 @@ job_categories = {
     "Business and Commerce": "https://au.gradconnection.com/graduate-jobs/business-and-commerce/melbourne/",
     "Computer Science": "https://au.gradconnection.com/graduate-jobs/computer-science/melbourne/",
     "Consulting": "https://au.gradconnection.com/graduate-jobs/consulting/melbourne/",
-    # "Data Science and Analytics": "https://au.gradconnection.com/graduate-jobs/data-science-and-analytics/melbourne/",
-    # "Information Systems": "https://au.gradconnection.com/graduate-jobs/information-systems/melbourne/",
+    "Data Science and Analytics": "https://au.gradconnection.com/graduate-jobs/data-science-and-analytics/melbourne/",
+    "Information Systems": "https://au.gradconnection.com/graduate-jobs/information-systems/melbourne/",
 }
 # User-Agent header to bot detection
 headers = {'User-Agent': "Mozilla/5.0}"}
@@ -21,7 +21,6 @@ def convert_closing_dates(text):
     Converts relative closing date into an actual date
     """
     today = datetime.today() # get today's date
-    print(text)
 
     # Match patterns using regular exressions and pattern location
     match = re.search(r"Closing in (\d+) (days|months)", text)
@@ -62,6 +61,9 @@ for category, url in job_categories.items():
 
     # Extract job details
     job_listings = soup.find("div", class_="jobs-container")
+    if not job_listings:
+        print("No job listings found for {category}")
+        continue
 
     relavent_jobs = job_listings.find("div")
 
@@ -71,8 +73,10 @@ for category, url in job_categories.items():
     job_list = []
 
     for job in relevant_jobs_all:
-    #     # Extract job title
+         # Extract job title
         job_element = job.find("a", class_="box-header-title")
+        if not job_element:
+            continue
 
         #Extract role title
         job_title = job_element.find("h3").text
@@ -88,4 +92,20 @@ for category, url in job_categories.items():
         time_left = job.find("div", class_="box-closing-interval").text
         closing_date = convert_closing_dates(time_left)
 
-        print(closing_date)
+        all_jobs.append({
+            "Category": category,
+            "Role": job_title,
+            "Company": company_name,
+            "Time to register": time_left,
+            "Closing Date": closing_date,
+            "Application Link": full_application_link
+        })
+
+# Convert to Pandas df
+df = pd.DataFrame(all_jobs)
+
+# Export to Excel
+output_file = "Graduate_Roles.xlsx"
+df.to_excel(output_file, index=False)
+
+print(f"Scraped {len(all_jobs)} jobs and saved to {output_file}")
