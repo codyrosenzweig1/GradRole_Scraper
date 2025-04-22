@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import re
 import pandas as pd
 
@@ -42,9 +43,11 @@ def convert_closing_dates(text):
             
         # Handle "Closing in a month" case
     if "Closing in a month" in text:
-        new_month = (today.month + 1) % 12 or 12
-        new_year = today.year + (today.month == 12)  # Increment year if current month is December
-        closing_date = today.replace(year=new_year, month=new_month)
+        closing_date = today + relativedelta(months=1)
+        return closing_date.strftime("%Y-%m-%d")
+
+    if "Closing in a day" in text:
+        closing_date = today + relativedelta(days=1)
         return closing_date.strftime("%Y-%m-%d")
     
     return "N/A"
